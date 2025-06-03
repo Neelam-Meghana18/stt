@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multilingual Voice Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet" />
+  <style>
+    /* YOUR ORIGINAL STYLING - DO NOT CHANGE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #6e8efb, #a777e3);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    p.description {
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+      max-width: 600px;
+    }
+
+    button {
+      background: #ffffff;
+      color: #6e8efb;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0px 8px 15px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0px 12px 20px rgba(0,0,0,0.2);
+    }
+
+    #output {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      max-width: 600px;
+      width: 100%;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+    }
+
+    .label {
+      font-weight: bold;
+      margin-top: 1rem;
+      color: #f0f0f0;
+    }
+
+    audio {
+      margin-top: 1rem;
+    }
+
+    .controls {
+      margin-top: 0.5rem;
+    }
+
+    .controls button {
+      margin: 0 5px;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌐 Multilingual Voice Assistant</h1>
+  <p class="description">Speak anything in your language, and get an instant voice reply using AI!</p>
+
+  <button onclick="startRecording()">🎙️ Start Talking</button>
+
+  <div id="output" style="display: none;">
+    <div class="label">You said:</div>
+    <p id="transcript"></p>
+    <div class="label">AI Response:</div>
+    <p id="response"></p>
+    <div class="label">Audio Reply:</div>
+    <audio id="audioReply" controls></audio>
+    <div class="controls">
+      <button onclick="toggleAudio()">⏯️ Play/Pause</button>
+    </div>
+  </div>
+
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+    let audioPlaying = false;
+
+    function startRecording() {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.start();
+          audioChunks = [];
+          alert('Recording... Click OK and wait 5 seconds.');
+
+          setTimeout(() => {
+            mediaRecorder.stop();
+          }, 5000);
+
+          mediaRecorder.ondataavailable = event => {
+            audioChunks.push(event.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            const formData = new FormData();
+            formData.append('audio_data', blob);
+
+            fetch('/process_audio', {
+              method: 'POST',
+              body: formData
+            })
+              .then(response => response.json())
+              .then(data => {
+                if (data.error) {
+                  alert('Error: ' + data.error);
+                } else {
+                  document.getElementById('output').style.display = 'block';
+                  document.getElementById('transcript').innerText = data.transcript;
+                  document.getElementById('response').innerText = data.response;
+
+                  const audio = document.getElementById('audioReply');
+                  audio.src = '/static/output.mp3';
+                  audio.onloadeddata = () => {
+                    audio.play();  // ✅ Instant voice reply
+                    audioPlaying = true;
+                  };
+                }
+              });
+          };
+        })
+        .catch(err => alert('Microphone error: ' + err));
+    }
+
+    function toggleAudio() {
+      const audio = document.getElementById('audioReply');
+      if (audio.paused) {
+        audio.play();
+        audioPlaying = true;
+      } else {
+        audio.pause();
+        audioPlaying = false;
+      }
+    }
+  </script>
+</body>
+</html>

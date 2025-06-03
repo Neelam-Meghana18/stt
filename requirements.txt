@@ -1,0 +1,7 @@
+Flask
+gTTS
+pydub
+speechrecognition
+langdetect
+python-dotenv
+google-generativeai

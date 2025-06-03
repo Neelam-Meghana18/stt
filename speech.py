@@ -1,3 +1,8 @@
+import os
+
+# 🔧 Set FFmpeg path manually
+os.environ["PATH"] += os.pathsep + r"C:\Users\Neelam Meghana\ffmpeg\ffmpeg-7.1.1-essentials_build\bin"
+
 import speech_recognition as sr
 from pydub import AudioSegment
 
